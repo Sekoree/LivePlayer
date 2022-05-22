@@ -349,6 +349,9 @@ namespace LivePlayer.UI.ViewModels
 
         public void Stop()
         {
+            if (CurrentTrack == null)
+                return;
+
             CurrentTrack!.IsPlaying = false;
             CurrentPosition = TimeSpan.Zero;
             MediaPlayer.Stop();
