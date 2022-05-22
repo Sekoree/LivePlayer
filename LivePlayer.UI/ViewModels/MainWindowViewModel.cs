@@ -41,10 +41,10 @@ namespace LivePlayer.UI.ViewModels
 
         public int Volume
         {
-            get => MediaPlayer.Volume;
+            get => Math.Clamp(MediaPlayer.Volume, 0, 100);
             set
             {
-                MediaPlayer.Volume = value;
+                MediaPlayer.Volume = Math.Clamp(value, 0, 100);
                 this.RaisePropertyChanged(nameof(Volume));
             }
         }
@@ -86,6 +86,8 @@ namespace LivePlayer.UI.ViewModels
             {
                 //Get random track
                 nextTrack = Queue[_random.Next(Queue.Count)];
+                while (nextTrack == CurrentTrack && Queue.Count > 1)
+                    nextTrack = Queue[_random.Next(Queue.Count)];
             }
             else
             {
