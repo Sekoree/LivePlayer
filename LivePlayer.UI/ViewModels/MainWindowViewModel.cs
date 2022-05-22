@@ -75,6 +75,9 @@ namespace LivePlayer.UI.ViewModels
 
         private void MediaPlayer_EndReached(object? sender, EventArgs e)
         {
+            if (CurrentTrack == null)
+                return;
+            
             //Start next song
             TrackModel? nextTrack = null;
             CurrentTrack!.IsPlaying = false;
@@ -349,6 +352,9 @@ namespace LivePlayer.UI.ViewModels
 
         public void Stop()
         {
+            if (CurrentTrack == null)
+                return;
+
             CurrentTrack!.IsPlaying = false;
             CurrentPosition = TimeSpan.Zero;
             MediaPlayer.Stop();
