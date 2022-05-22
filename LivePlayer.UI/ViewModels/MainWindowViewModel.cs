@@ -22,7 +22,7 @@ namespace LivePlayer.UI.ViewModels
 {
     public class MainWindowViewModel : ViewModelBase
     {
-        private readonly LibVLC _libVlc;
+        private LibVLC _libVlc;
         private readonly Random _random;
         private readonly YoutubeClient _youtubeClient;
 
@@ -51,7 +51,7 @@ namespace LivePlayer.UI.ViewModels
 
         [Reactive] public ObservableCollection<TrackModel> Queue { get; set; } = new();
         private ObservableCollection<TrackModel> LastPlayed { get; set; } = new();
-        
+
         public int QueueCount => Queue.Count;
         public TimeSpan QueueLength => TimeSpan.FromSeconds(Queue.Sum(x => x.Length.TotalSeconds));
 
@@ -59,26 +59,39 @@ namespace LivePlayer.UI.ViewModels
 
         [Reactive] public string? UrlInput { get; set; }
 
+        [Reactive] public bool Initializing { get; set; } = true;
+
 
         public MainWindowViewModel()
         {
             _random = new Random();
             _youtubeClient = new YoutubeClient();
-            Core.Initialize();
-            _libVlc = new LibVLC();
-            MediaPlayer = new MediaPlayer(_libVlc);
-
-            MediaPlayer.PositionChanged += MediaPlayer_PositionChanged;
-            MediaPlayer.EndReached += MediaPlayer_EndReached;
 
             //_ = Task.Run(Test);
+            _ = Task.Run(InitializeAsync);
+        }
+
+        private async Task InitializeAsync()
+        {
+            await Task.Delay(1000);
+            //Dispatcher.UIThread.Post(() =>
+            //{
+                Core.Initialize();
+                _libVlc = new LibVLC();
+                MediaPlayer = new MediaPlayer(_libVlc);
+
+                MediaPlayer.PositionChanged += MediaPlayer_PositionChanged;
+                MediaPlayer.EndReached += MediaPlayer_EndReached;
+                this.RaisePropertyChanged(nameof(Volume));
+                Initializing = false;
+            //});
         }
 
         private void MediaPlayer_EndReached(object? sender, EventArgs e)
         {
             if (CurrentTrack == null)
                 return;
-            
+
             //Start next song
             TrackModel? nextTrack = null;
             CurrentTrack!.IsPlaying = false;
@@ -123,7 +136,7 @@ namespace LivePlayer.UI.ViewModels
             {
                 //if (string.IsNullOrWhiteSpace(CurrentTrack.DirectPath))
                 //{
-                    await CurrentTrack.GetDirectPath();
+                await CurrentTrack.GetDirectPath();
                 //}
 
                 await Dispatcher.UIThread.InvokeAsync(() =>
@@ -134,7 +147,7 @@ namespace LivePlayer.UI.ViewModels
                 if (IsFileOut)
                 {
                     await File.WriteAllTextAsync("Title.txt", CurrentTrack.Title);
-                    await File.WriteAllTextAsync("Artist.txt", CurrentTrack.Artist);   
+                    await File.WriteAllTextAsync("Artist.txt", CurrentTrack.Artist);
                 }
             });
         }
@@ -170,13 +183,13 @@ namespace LivePlayer.UI.ViewModels
         public void OpenSourceRepo()
         {
             var ps = new ProcessStartInfo("https://github.com/Sekoree/LivePlayer")
-            { 
-                UseShellExecute = true, 
-                Verb = "open" 
+            {
+                UseShellExecute = true,
+                Verb = "open"
             };
             Process.Start(ps);
         }
-        
+
         //public async Task Test()
         //{
         //    //await Task.Delay(5000);
@@ -246,21 +259,23 @@ namespace LivePlayer.UI.ViewModels
                     this.RaisePropertyChanged(nameof(QueueCount));
                     this.RaisePropertyChanged(nameof(QueueLength));
                 }
+
                 UrlInput = null;
                 return;
             }
+
             UrlInput = "Invalid URL";
             await Task.Delay(2500);
             UrlInput = null;
         }
-        
+
         public void RemoveTrackFromQueue(TrackModel track)
         {
             Queue.Remove(track);
             this.RaisePropertyChanged(nameof(QueueCount));
             this.RaisePropertyChanged(nameof(QueueLength));
         }
-        
+
         public async Task SavePlaylist(Window parent)
         {
             var plsPathDialog = new SaveFileDialog()
@@ -270,7 +285,7 @@ namespace LivePlayer.UI.ViewModels
                 {
                     new FileDialogFilter()
                     {
-                        Extensions = new List<string>() {"m3u"},
+                        Extensions = new List<string>() { "m3u" },
                         Name = "M3U Playlist"
                     }
                 },
@@ -278,7 +293,7 @@ namespace LivePlayer.UI.ViewModels
                 Title = "Save Current Playlist"
             };
             var dialogResult = await plsPathDialog.ShowAsync(parent);
-            if(string.IsNullOrWhiteSpace(dialogResult))
+            if (string.IsNullOrWhiteSpace(dialogResult))
             {
                 return;
             }
@@ -286,7 +301,7 @@ namespace LivePlayer.UI.ViewModels
             var pls = PlaylistIOFactory.GetInstance().GetPlaylistIO(dialogResult);
             pls.FilePaths = Queue.Select(t => t.Path!).ToList();
         }
-        
+
         public async Task LoadPlaylist(Window parent)
         {
             var plsPathDialog = new OpenFileDialog()
@@ -295,18 +310,18 @@ namespace LivePlayer.UI.ViewModels
                 {
                     new FileDialogFilter()
                     {
-                        Extensions = new List<string>() {"m3u"},
+                        Extensions = new List<string>() { "m3u" },
                         Name = "M3U Playlist"
                     }
                 },
                 Title = "Load Playlist (Only with YouTube URL supported)"
             };
             var dialogResult = await plsPathDialog.ShowAsync(parent);
-            if(dialogResult == null || dialogResult.Length == 0)
+            if (dialogResult == null || dialogResult.Length == 0)
             {
                 return;
             }
-            
+
             var pls = PlaylistIOFactory.GetInstance().GetPlaylistIO(dialogResult[0]);
             Queue.Clear();
             foreach (var path in pls.FilePaths)
@@ -319,10 +334,11 @@ namespace LivePlayer.UI.ViewModels
                 _ = Task.Run(track.LoadInfoAsync);
                 Queue.Add(track);
             }
+
             this.RaisePropertyChanged(nameof(QueueCount));
             this.RaisePropertyChanged(nameof(QueueLength));
         }
-        
+
         public void ClearQueue()
         {
             Queue.Clear();
@@ -345,7 +361,7 @@ namespace LivePlayer.UI.ViewModels
                 CurrentTrack = QueueSelectedTrack;
                 //if (string.IsNullOrWhiteSpace(CurrentTrack.DirectPath))
                 //{
-                    await CurrentTrack.GetDirectPath();
+                await CurrentTrack.GetDirectPath();
                 //}
 
                 using var media = new Media(_libVlc, new Uri(QueueSelectedTrack.DirectPath!));
@@ -354,8 +370,9 @@ namespace LivePlayer.UI.ViewModels
                 if (IsFileOut)
                 {
                     await File.WriteAllTextAsync("Title.txt", CurrentTrack.Title);
-                    await File.WriteAllTextAsync("Artist.txt", CurrentTrack.Artist);   
+                    await File.WriteAllTextAsync("Artist.txt", CurrentTrack.Artist);
                 }
+
                 QueueSelectedTrack = null;
                 return;
             }
@@ -371,7 +388,7 @@ namespace LivePlayer.UI.ViewModels
             CurrentTrack!.IsPlaying = false;
             CurrentPosition = TimeSpan.Zero;
             MediaPlayer.Stop();
-            
+
             if (!IsFileOut)
                 return;
 
@@ -403,7 +420,7 @@ namespace LivePlayer.UI.ViewModels
                 if (IsFileOut)
                 {
                     await File.WriteAllTextAsync("Title.txt", CurrentTrack.Title);
-                    await File.WriteAllTextAsync("Artist.txt", CurrentTrack.Artist);   
+                    await File.WriteAllTextAsync("Artist.txt", CurrentTrack.Artist);
                 }
             }
         }

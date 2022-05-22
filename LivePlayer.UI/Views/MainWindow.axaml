@@ -18,270 +18,286 @@
         <vm:MainWindowViewModel />
     </Design.DataContext>
 
-    <Grid ColumnDefinitions="400,*"
-          Margin="0,25,0,0">
+    <Grid>
 
-        <StackPanel Grid.Column="0"
-                    Grid.Row="0"
-                    Margin="50,10"
-                    Spacing="15"
-                    Orientation="Vertical"
-                    HorizontalAlignment="Stretch"
-                    VerticalAlignment="Top">
+        <Grid ColumnDefinitions="400,*"
+              Margin="0,25,0,0">
 
-            <TextBlock Text="{Binding CurrentTrack.Title, FallbackValue=Not Playing}"
-                       FontSize="28"
-                       TextWrapping="Wrap"
-                       MaxLines="2"
-                       TextTrimming="CharacterEllipsis"
-                       TextAlignment="Center" />
+            <StackPanel Grid.Column="0"
+                        Grid.Row="0"
+                        Margin="50,10"
+                        Spacing="15"
+                        Orientation="Vertical"
+                        HorizontalAlignment="Stretch"
+                        VerticalAlignment="Top">
 
-            <TextBlock Text="{Binding CurrentTrack.Artist, FallbackValue=''}"
-                       FontSize="20"
-                       TextWrapping="Wrap"
-                       TextAlignment="Center" />
+                <TextBlock Text="{Binding CurrentTrack.Title, FallbackValue=Not Playing}"
+                           FontSize="28"
+                           TextWrapping="Wrap"
+                           MaxLines="2"
+                           TextTrimming="CharacterEllipsis"
+                           TextAlignment="Center" />
 
-            <Border CornerRadius="5"
-                    VerticalAlignment="Center"
-                    HorizontalAlignment="Center">
-                <Image asyncImageLoader:ImageLoader.Source="{Binding CurrentTrack.CoverUrl}"
-                       Height="150"
-                       VerticalAlignment="Center"
-                       HorizontalAlignment="Center" />
-            </Border>
+                <TextBlock Text="{Binding CurrentTrack.Artist, FallbackValue=''}"
+                           FontSize="20"
+                           TextWrapping="Wrap"
+                           TextAlignment="Center" />
 
-            <StackPanel Orientation="Horizontal"
-                        VerticalAlignment="Center"
-                        HorizontalAlignment="Center"
-                        Spacing="5">
-                <TextBlock Text="{Binding CurrentPosition, FallbackValue=0}" />
-                <TextBlock Text="/" />
-                <TextBlock Text="{Binding CurrentTrack.Length, FallbackValue=0}" />
-            </StackPanel>
-
-            <ProgressBar Maximum="{Binding CurrentTrack.Length.TotalSeconds, FallbackValue=10}"
-                         Value="{Binding CurrentPosition.TotalSeconds, FallbackValue=0}"
-                         HorizontalAlignment="Stretch" />
-
-            <StackPanel Orientation="Horizontal"
+                <Border CornerRadius="5"
                         VerticalAlignment="Center"
                         HorizontalAlignment="Center">
-                <Button Content="⏮"
-                        FontSize="20"
-                        Command="{Binding Rewind}" />
-                <Button Content="⏹"
-                        FontSize="20"
-                        Command="{Binding Stop}" />
-                <Button Content="⏯"
-                        FontSize="20"
-                        Command="{Binding PlayPause}" />
-                <Button Content="⏭"
-                        FontSize="20"
-                        Command="{Binding FastForward}" />
+                    <Image asyncImageLoader:ImageLoader.Source="{Binding CurrentTrack.CoverUrl}"
+                           Height="150"
+                           VerticalAlignment="Center"
+                           HorizontalAlignment="Center" />
+                </Border>
+
+                <StackPanel Orientation="Horizontal"
+                            VerticalAlignment="Center"
+                            HorizontalAlignment="Center"
+                            Spacing="5">
+                    <TextBlock Text="{Binding CurrentPosition, FallbackValue=0}" />
+                    <TextBlock Text="/" />
+                    <TextBlock Text="{Binding CurrentTrack.Length, FallbackValue=0}" />
+                </StackPanel>
+
+                <ProgressBar Maximum="{Binding CurrentTrack.Length.TotalSeconds, FallbackValue=10}"
+                             Value="{Binding CurrentPosition.TotalSeconds, FallbackValue=0}"
+                             HorizontalAlignment="Stretch" />
+
+                <StackPanel Orientation="Horizontal"
+                            VerticalAlignment="Center"
+                            HorizontalAlignment="Center">
+                    <Button Content="⏮"
+                            FontSize="20"
+                            Command="{Binding Rewind}" />
+                    <Button Content="⏹"
+                            FontSize="20"
+                            Command="{Binding Stop}" />
+                    <Button Content="⏯"
+                            FontSize="20"
+                            Command="{Binding PlayPause}" />
+                    <Button Content="⏭"
+                            FontSize="20"
+                            Command="{Binding FastForward}" />
+                </StackPanel>
+
+                <TextBlock TextAlignment="Center"
+                           Text="{Binding Volume, StringFormat=Volume: {0}}" />
+                <Slider Margin="0,-25,0,0"
+                        Value="{Binding Volume}" />
+
+                <Grid ColumnDefinitions="*,*,*"
+                      RowDefinitions="Auto,Auto"
+                      VerticalAlignment="Center"
+                      HorizontalAlignment="Center">
+                    <TextBlock Grid.Column="0"
+                               Grid.Row="0"
+                               TextAlignment="Center"
+                               Text="Loop" />
+                    <TextBlock Grid.Column="1"
+                               Grid.Row="0"
+                               TextAlignment="Center"
+                               Text="Shuffle" />
+                    <TextBlock Grid.Column="2"
+                               Grid.Row="0"
+                               TextAlignment="Center"
+                               Text="File Out" />
+
+                    <ToggleSwitch Grid.Column="0"
+                                  Grid.Row="1"
+                                  Margin="10,0"
+                                  IsChecked="{Binding IsLooping}" />
+                    <ToggleSwitch Grid.Column="1"
+                                  Grid.Row="1"
+                                  Margin="10,0"
+                                  IsChecked="{Binding IsShuffle}" />
+                    <ToggleSwitch Grid.Column="2"
+                                  Grid.Row="1"
+                                  Margin="10,0"
+                                  IsChecked="{Binding IsFileOut}" />
+                </Grid>
+
             </StackPanel>
 
-            <TextBlock TextAlignment="Center"
-                       Text="{Binding Volume, StringFormat=Volume: {0}}" />
-            <Slider Margin="0,-25,0,0"
-                    Value="{Binding Volume}" />
+            <Button Grid.Column="0"
+                    Grid.Row="0"
+                    Margin="10"
+                    IsEnabled="False"
+                    HorizontalAlignment="Left"
+                    VerticalAlignment="Bottom"
+                    Content="Settings" />
 
-            <Grid ColumnDefinitions="*,*,*"
-                  RowDefinitions="Auto,Auto"
-                  VerticalAlignment="Center"
-                  HorizontalAlignment="Center">
-                <TextBlock Grid.Column="0"
-                           Grid.Row="0"
-                           TextAlignment="Center"
-                           Text="Loop" />
+            <Button Grid.Column="0"
+                    Grid.Row="0"
+                    Margin="10"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Bottom"
+                    Command="{Binding OpenSourceRepo}">
+                <Image Source="avares://LivePlayer/Assets/GitHub-Mark-Light-120px-plus.png"
+                       MaxHeight="20" />
+            </Button>
+
+            <Button Grid.Column="0"
+                    Grid.Row="0"
+                    Margin="10"
+                    IsEnabled="False"
+                    HorizontalAlignment="Right"
+                    VerticalAlignment="Bottom"
+                    Content="Video" />
+
+            <Button Grid.Column="0"
+                    Grid.Row="0"
+                    HorizontalAlignment="Right"
+                    VerticalAlignment="Stretch"
+                    VerticalContentAlignment="Center"
+                    HorizontalContentAlignment="Center"
+                    Margin="0, 75 ,5 ,75"
+                    Width="15"
+                    Content="|"
+                    Padding="0"
+                    Command="{Binding OpenCloseFlyOut}"
+                    CommandParameter="{Binding ., RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type Window}}}">
+            </Button>
+
+            <Grid Grid.Column="1"
+                  Grid.Row="0"
+                  Margin="10"
+                  IsVisible="{Binding IsFlyoutOpen}"
+                  ColumnDefinitions="*, 120"
+                  RowDefinitions="Auto, *"
+                  HorizontalAlignment="Stretch">
+
+                <Border Grid.Column="0"
+                        Grid.Row="0"
+                        HorizontalAlignment="Stretch"
+                        VerticalAlignment="Center"
+                        BorderBrush="White"
+                        BorderThickness="1"
+                        CornerRadius="3.5">
+                    <Grid ColumnDefinitions="*, Auto" HorizontalAlignment="Stretch">
+                        <TextBox Grid.Column="0"
+                                 BorderThickness="0"
+                                 HorizontalAlignment="Stretch"
+                                 Text="{Binding UrlInput}"
+                                 KeyDown="InputElement_OnKeyDown"
+                                 Watermark="YouTube Video or Playlist URL" />
+                        <Button Grid.Column="1"
+                                HorizontalAlignment="Right"
+                                Content="Add"
+                                Command="{Binding AddSongToQueue}" />
+                    </Grid>
+                </Border>
+
+                <ListBox Grid.Column="0"
+                         Grid.Row="1"
+                         Items="{Binding Queue}"
+                         SelectedItem="{Binding QueueSelectedTrack}"
+                         SelectionMode="Toggle"
+                         Margin="0,10,0,0"
+                         CornerRadius="3"
+                         BorderThickness="1"
+                         BorderBrush="#666666">
+                    <ListBox.ItemTemplate>
+                        <DataTemplate DataType="models:TrackModel">
+                            <Grid ColumnDefinitions="Auto, *, *, Auto, Auto">
+                                <TextBlock Grid.Column="0"
+                                           TextAlignment="Center"
+                                           HorizontalAlignment="Center"
+                                           VerticalAlignment="Center"
+                                           Margin="5,0"
+                                           FontWeight="ExtraBold"
+                                           IsVisible="{Binding IsPlaying}"
+                                           Text="▶" />
+                                <TextBlock Grid.Column="1"
+                                           TextWrapping="Wrap"
+                                           VerticalAlignment="Center"
+                                           Text="{Binding Title}" />
+                                <TextBlock Grid.Column="2"
+                                           TextWrapping="Wrap"
+                                           VerticalAlignment="Center"
+                                           Text="{Binding Artist}" />
+                                <TextBlock Grid.Column="3"
+                                           VerticalAlignment="Center"
+                                           Text="{Binding Length}" />
+                                <Button Grid.Column="4"
+                                        HorizontalAlignment="Stretch"
+                                        HorizontalContentAlignment="Center"
+                                        VerticalAlignment="Stretch"
+                                        VerticalContentAlignment="Center"
+                                        Foreground="#DD2222"
+                                        Margin="10,0,0,0"
+                                        Padding="5"
+                                        Command="{Binding DataContext.RemoveTrackFromQueue, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type Window}}}"
+                                        CommandParameter="{Binding .}">
+                                    <TextBlock TextAlignment="Center"
+                                               Width="20"
+                                               Text="X" />
+                                </Button>
+                            </Grid>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                    <ListBox.Styles>
+                        <Style Selector="ListBoxItem">
+                            <Setter Property="BorderThickness" Value="1" />
+                            <Setter Property="BorderBrush" Value="#888888" />
+                            <Setter Property="CornerRadius" Value="3" />
+                        </Style>
+                    </ListBox.Styles>
+                </ListBox>
+
+                <StackPanel Grid.Column="1"
+                            Grid.Row="1"
+                            Orientation="Vertical"
+                            VerticalAlignment="Stretch"
+                            HorizontalAlignment="Stretch"
+                            Margin="10"
+                            Spacing="20">
+                    <Button Content="Save"
+                            HorizontalAlignment="Stretch"
+                            HorizontalContentAlignment="Center"
+                            Command="{Binding SavePlaylist}"
+                            CommandParameter="{Binding ., RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type Window}}}" />
+                    <Button Content="Open"
+                            HorizontalAlignment="Stretch"
+                            HorizontalContentAlignment="Center"
+                            Command="{Binding LoadPlaylist}"
+                            CommandParameter="{Binding ., RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type Window}}}" />
+                    <Button Content="Clear"
+                            HorizontalAlignment="Stretch"
+                            HorizontalContentAlignment="Center"
+                            Command="{Binding ClearQueue}" />
+
+                    <TextBlock Text="Count" />
+                    <TextBlock Margin="0,-15,0,0"
+                               Text="{Binding QueueCount}" />
+                    <TextBlock Text="Length" />
+                    <TextBlock Margin="0,-15,0,0"
+                               Text="{Binding QueueLength}" />
+                </StackPanel>
+
                 <TextBlock Grid.Column="1"
-                           Grid.Row="0"
-                           TextAlignment="Center"
-                           Text="Shuffle" />
-                <TextBlock Grid.Column="2"
-                           Grid.Row="0"
-                           TextAlignment="Center"
-                           Text="File Out" />
+                           Grid.Row="1"
+                           VerticalAlignment="Bottom"
+                           HorizontalAlignment="Center"
+                           TextWrapping="Wrap"
+                           Text="LivePlayer" />
 
-                <ToggleSwitch Grid.Column="0"
-                              Grid.Row="1"
-                              Margin="10,0"
-                              IsChecked="{Binding IsLooping}" />
-                <ToggleSwitch Grid.Column="1"
-                              Grid.Row="1"
-                              Margin="10,0"
-                              IsChecked="{Binding IsShuffle}" />
-                <ToggleSwitch Grid.Column="2"
-                              Grid.Row="1"
-                              Margin="10,0"
-                              IsChecked="{Binding IsFileOut}" />
             </Grid>
 
-        </StackPanel>
-
-        <Button Grid.Column="0"
-                Grid.Row="0"
-                Margin="10"
-                IsEnabled="False"
-                HorizontalAlignment="Left"
-                VerticalAlignment="Bottom"
-                Content="Settings" />
-                
-        <Button Grid.Column="0"
-                Grid.Row="0"
-                Margin="10"
-                HorizontalAlignment="Center"
-                VerticalAlignment="Bottom"
-                Command="{Binding OpenSourceRepo}">
-            <Image Source="avares://LivePlayer/Assets/GitHub-Mark-Light-120px-plus.png"
-                   MaxHeight="20"/>
-        </Button>
-
-        <Button Grid.Column="0"
-                Grid.Row="0"
-                Margin="10"
-                IsEnabled="False"
-                HorizontalAlignment="Right"
-                VerticalAlignment="Bottom"
-                Content="Video" />
-        
-        <Button Grid.Column="0"
-                Grid.Row="0" 
-                HorizontalAlignment="Right"
-                VerticalAlignment="Stretch"
-                VerticalContentAlignment="Center"
-                HorizontalContentAlignment="Center"
-                Margin="0, 75 ,5 ,75"
-                Width="15"
-                Content="|"
-                Padding="0"
-                Command="{Binding OpenCloseFlyOut}"
-                CommandParameter="{Binding ., RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type Window}}}">
-        </Button>
-
-        <Grid Grid.Column="1"
-              Grid.Row="0"
-              Margin="10"
-              IsVisible="{Binding IsFlyoutOpen}"
-              ColumnDefinitions="*, 120"
-              RowDefinitions="Auto, *"
-              HorizontalAlignment="Stretch">
-
-            <Border Grid.Column="0"
-                    Grid.Row="0"
-                    HorizontalAlignment="Stretch"
-                    VerticalAlignment="Center"
-                    BorderBrush="White"
-                    BorderThickness="1"
-                    CornerRadius="3.5">
-                <Grid ColumnDefinitions="*, Auto" HorizontalAlignment="Stretch">
-                    <TextBox Grid.Column="0"
-                             BorderThickness="0"
-                             HorizontalAlignment="Stretch"
-                             Text="{Binding UrlInput}"
-                             Watermark="YouTube Video or Playlist URL" />
-                    <Button Grid.Column="1"
-                            HorizontalAlignment="Right"
-                            Content="Add"
-                            Command="{Binding AddSongToQueue}" />
-                </Grid>
-            </Border>
-            
-            <ListBox Grid.Column="0"
-                     Grid.Row="1"
-                     Items="{Binding Queue}"
-                     SelectedItem="{Binding QueueSelectedTrack}"
-                     SelectionMode="Toggle"
-                     Margin="0,10,0,0"
-                     CornerRadius="3"
-                     BorderThickness="1"
-                     BorderBrush="#666666">
-                <ListBox.ItemTemplate>
-                    <DataTemplate DataType="models:TrackModel">
-                        <Grid ColumnDefinitions="Auto, *, *, Auto, Auto">
-                            <TextBlock Grid.Column="0"
-                                       TextAlignment="Center"
-                                       HorizontalAlignment="Center"
-                                       VerticalAlignment="Center"
-                                       Margin="5,0"
-                                       FontWeight="ExtraBold"
-                                       IsVisible="{Binding IsPlaying}"
-                                       Text="▶" />
-                            <TextBlock Grid.Column="1"
-                                       TextWrapping="Wrap"
-                                       VerticalAlignment="Center"
-                                       Text="{Binding Title}" />
-                            <TextBlock Grid.Column="2"
-                                       TextWrapping="Wrap"
-                                       VerticalAlignment="Center"
-                                       Text="{Binding Artist}" />
-                            <TextBlock Grid.Column="3"
-                                       VerticalAlignment="Center"
-                                       Text="{Binding Length}" />
-                            <Button Grid.Column="4"
-                                    HorizontalAlignment="Stretch"
-                                    HorizontalContentAlignment="Center"
-                                    VerticalAlignment="Stretch"
-                                    VerticalContentAlignment="Center"
-                                    Foreground="#DD2222"
-                                    Margin="10,0,0,0"
-                                    Padding="5"
-                                    Command="{Binding DataContext.RemoveTrackFromQueue, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type Window}}}"
-                                    CommandParameter="{Binding .}">
-                                <TextBlock TextAlignment="Center"
-                                           Width="20"
-                                           Text="X" />
-                            </Button>
-                        </Grid>
-                    </DataTemplate>
-                </ListBox.ItemTemplate>
-                <ListBox.Styles>
-                    <Style Selector="ListBoxItem">
-                        <Setter Property="BorderThickness" Value="1" />
-                        <Setter Property="BorderBrush" Value="#888888" />
-                        <Setter Property="CornerRadius" Value="3" />
-                    </Style>
-                </ListBox.Styles>
-            </ListBox>
-
-            <StackPanel Grid.Column="1"
-                        Grid.Row="1"
-                        Orientation="Vertical"
-                        VerticalAlignment="Stretch"
-                        HorizontalAlignment="Stretch"
-                        Margin="10"
-                        Spacing="20">
-                <Button Content="Save"
-                        HorizontalAlignment="Stretch"
-                        HorizontalContentAlignment="Center" 
-                        Command="{Binding SavePlaylist}"
-                        CommandParameter="{Binding ., RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type Window}}}"/>
-                <Button Content="Open"
-                        HorizontalAlignment="Stretch"
-                        HorizontalContentAlignment="Center"
-                        Command="{Binding LoadPlaylist}"
-                        CommandParameter="{Binding ., RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type Window}}}" />
-                <Button Content="Clear"
-                        HorizontalAlignment="Stretch"
-                        HorizontalContentAlignment="Center" 
-                        Command="{Binding ClearQueue}"/>
-
-                <TextBlock Text="Count" />
-                <TextBlock Margin="0,-15,0,0"
-                           Text="{Binding QueueCount}" />
-                <TextBlock Text="Length" />
-                <TextBlock Margin="0,-15,0,0"
-                           Text="{Binding QueueLength}" />
-            </StackPanel>
-            
-            <TextBlock Grid.Column="1"
-                       Grid.Row="1"
-                       VerticalAlignment="Bottom"
-                       HorizontalAlignment="Center"
-                       TextWrapping="Wrap"
-                       Text="LivePlayer"/>
-
         </Grid>
-
+        
+        <Border Background="#BB222222"
+                IsVisible="{Binding Initializing}"
+                IsEnabled="{Binding Initializing}">
+            <TextBlock HorizontalAlignment="Center"
+                       VerticalAlignment="Center"
+                       IsVisible="{Binding Initializing}"
+                       IsEnabled="{Binding Initializing}"
+                       FontSize="30"
+                       Text="Initializing..."/>
+        </Border>
+        
     </Grid>
 
 </Window>
