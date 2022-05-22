@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
@@ -162,6 +163,16 @@ namespace LivePlayer.UI.ViewModels
                 LastWidth = window.ClientSize.Width;
                 window.SizeToContent = SizeToContent.Width;
             }
+        }
+
+        public void OpenSourceRepo()
+        {
+            var ps = new ProcessStartInfo("https://github.com/Sekoree/LivePlayer")
+            { 
+                UseShellExecute = true, 
+                Verb = "open" 
+            };
+            Process.Start(ps);
         }
         
         //public async Task Test()

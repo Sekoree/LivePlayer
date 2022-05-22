@@ -29,14 +29,14 @@
                     HorizontalAlignment="Stretch"
                     VerticalAlignment="Top">
 
-            <TextBlock Text="{Binding CurrentTrack.Title, FallbackValue=n/a}"
+            <TextBlock Text="{Binding CurrentTrack.Title, FallbackValue=Not Playing}"
                        FontSize="28"
                        TextWrapping="Wrap"
                        MaxLines="2"
                        TextTrimming="CharacterEllipsis"
                        TextAlignment="Center" />
 
-            <TextBlock Text="{Binding CurrentTrack.Artist, FallbackValue=n/a}"
+            <TextBlock Text="{Binding CurrentTrack.Artist, FallbackValue=''}"
                        FontSize="20"
                        TextWrapping="Wrap"
                        TextAlignment="Center" />
@@ -125,6 +125,16 @@
                 HorizontalAlignment="Left"
                 VerticalAlignment="Bottom"
                 Content="Settings" />
+                
+        <Button Grid.Column="0"
+                Grid.Row="0"
+                Margin="10"
+                HorizontalAlignment="Center"
+                VerticalAlignment="Bottom"
+                Command="{Binding OpenSourceRepo}">
+            <Image Source="avares://LivePlayer/Assets/GitHub-Mark-Light-120px-plus.png"
+                   MaxHeight="20"/>
+        </Button>
 
         <Button Grid.Column="0"
                 Grid.Row="0"
@@ -268,7 +278,7 @@
                        VerticalAlignment="Bottom"
                        HorizontalAlignment="Center"
                        TextWrapping="Wrap"
-                       Text="Idk what else to put here :|"/>
+                       Text="LivePlayer"/>
 
         </Grid>
 
