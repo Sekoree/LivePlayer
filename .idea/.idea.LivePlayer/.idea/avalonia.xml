@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="AvaloniaProject">
+    <option name="projectPerEditor">
+      <map>
+        <entry key="LivePlayer.UI/App.axaml" value="LivePlayer.UI/LivePlayer.UI.csproj" />
+        <entry key="LivePlayer.UI/Views/MainWindow.axaml" value="LivePlayer.UI/LivePlayer.UI.csproj" />
+        <entry key="LivePlayer.UI/Views/VideoViewer.axaml" value="LivePlayer.UI/LivePlayer.UI.csproj" />
+      </map>
+    </option>
+  </component>
+</project>
