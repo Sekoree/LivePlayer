@@ -200,7 +200,8 @@
                          BorderBrush="#666666">
                     <ListBox.ItemTemplate>
                         <DataTemplate DataType="models:TrackModel">
-                            <Grid ColumnDefinitions="Auto, *, *, Auto, Auto">
+                            <Grid ColumnDefinitions="Auto, 2*, *, Auto, Auto"
+                                  DoubleTapped="InputElement_OnDoubleTapped">
                                 <TextBlock Grid.Column="0"
                                            TextAlignment="Center"
                                            HorizontalAlignment="Center"
