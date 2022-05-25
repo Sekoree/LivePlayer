@@ -10,8 +10,8 @@
         <ApplicationIcon>Assets\yes.ico</ApplicationIcon>
         <Company>Seko</Company>
         <Product>LivePlayer</Product>
-        <AssemblyVersion>1.0.4</AssemblyVersion>
-        <FileVersion>1.0.4</FileVersion>
+        <AssemblyVersion>2.0.0</AssemblyVersion>
+        <FileVersion>2.0.0</FileVersion>
     </PropertyGroup>
     <ItemGroup>
         <Folder Include="Models\" />
