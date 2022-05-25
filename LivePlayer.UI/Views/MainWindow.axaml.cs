@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
+using LivePlayer.UI.Controls;
 using LivePlayer.UI.Models;
 using LivePlayer.UI.ViewModels;
 
@@ -28,11 +29,11 @@ namespace LivePlayer.UI.Views
         {
             if (DataContext is not MainWindowViewModel dContext) 
                 return;
-            if (sender is not Grid { DataContext: TrackModel track }) 
+            if (sender is not QueueEntry { DataContext: TrackModel track }) 
                 return;
             
             dContext.QueueSelectedTrack = track;
-            _ = Task.Run(() => dContext.PlayPause());
+            _ = Task.Run(() => dContext.Play());
         }
     }
 }

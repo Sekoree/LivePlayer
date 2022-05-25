@@ -1,0 +1,48 @@
+﻿<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d" d:DesignWidth="500" d:DesignHeight="250"
+             x:Class="LivePlayer.UI.Controls.MediaControls">
+    <Grid ColumnDefinitions="*,*,*,*"
+          HorizontalAlignment="Stretch">
+        
+        <Button Grid.Column="0"
+                HorizontalAlignment="Stretch"
+                CornerRadius="3,0,0,3"
+                Command="{Binding FastRewindCommand, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type UserControl}}}">
+                <Svg Path="avares://LivePlayer/Assets/fast_rewind_white_48dp.svg"/>    
+        </Button>
+        
+        <Button Grid.Column="1"
+                CornerRadius="0"
+                HorizontalAlignment="Stretch"
+                Command="{Binding StopCommand, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type UserControl}}}">
+                <Svg Path="avares://LivePlayer/Assets/stop_white_48dp.svg"/>
+        </Button>
+        
+        <Button Grid.Column="2"
+                IsVisible="{Binding IsPlaying, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type UserControl}}}"
+                CornerRadius="0"
+                HorizontalAlignment="Stretch"
+                Command="{Binding PauseCommand, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type UserControl}}}">
+                <Svg Path="avares://LivePlayer/Assets/pause_white_48dp.svg"/>
+        </Button>
+        
+        <Button Grid.Column="2"
+                IsVisible="{Binding !IsPlaying, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type UserControl}}}"
+                CornerRadius="0"
+                HorizontalAlignment="Stretch"
+                Command="{Binding PlayCommand, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type UserControl}}}">
+                <Svg Path="avares://LivePlayer/Assets/play_arrow_white_48dp.svg"/>
+        </Button>
+        
+        <Button Grid.Column="3"
+                HorizontalAlignment="Stretch"
+                CornerRadius="0,3,3,0"
+                Command="{Binding FastForwardCommand, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type UserControl}}}">
+                <Svg Path="avares://LivePlayer/Assets/fast_forward_white_48dp.svg"/>
+        </Button>
+
+    </Grid>
+</UserControl>

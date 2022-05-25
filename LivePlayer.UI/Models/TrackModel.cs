@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.ObjectModel;
+using System.Linq;
 using System.Threading.Tasks;
 using ReactiveUI;
 using ReactiveUI.Fody.Helpers;
@@ -18,16 +20,21 @@ public class TrackModel : ReactiveObject
     [Reactive] public TimeSpan Length { get; set; } = TimeSpan.Zero;
     [Reactive] public string? CoverUrl { get; set; }
     [Reactive] public bool IsPlaying { get; set; }
+    
+    private ObservableCollection<TrackModel> _parentCollection;
 
-    public TrackModel(YoutubeClient client)
+    public TrackModel(YoutubeClient client, ObservableCollection<TrackModel> parentCollection)
     {
         _client = client;
+        _parentCollection = parentCollection;
     }
 
     public async Task<string> GetDirectPath()
     {
         var streamInfoSet = await _client.Videos.Streams.GetManifestAsync(Path!);
-        var streamInfo = streamInfoSet.GetAudioOnlyStreams().GetWithHighestBitrate();
+        var streamInfo = streamInfoSet.GetAudioOnlyStreams()
+            .Where(x => x.Container.Name == "webm")
+            .GetWithHighestBitrate();
         DirectPath = streamInfo.Url;
         return streamInfo.Url;
     }
@@ -42,5 +49,10 @@ public class TrackModel : ReactiveObject
         Artist = video.Author.ChannelTitle;
         Length = video.Duration ?? Length;
         CoverUrl = video.Thumbnails.GetWithHighestResolution().Url;
+    }
+    
+    public void RemoveThis()
+    {
+        _parentCollection.Remove(this);
     }
 }

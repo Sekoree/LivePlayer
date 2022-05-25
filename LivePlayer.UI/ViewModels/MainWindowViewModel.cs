@@ -6,11 +6,10 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using ATL.Playlist;
-using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Threading;
-using LibVLCSharp.Shared;
 using LivePlayer.UI.Models;
+using ManagedBass;
 using ReactiveUI;
 using ReactiveUI.Fody.Helpers;
 using YoutubeExplode;
@@ -22,11 +21,11 @@ namespace LivePlayer.UI.ViewModels
 {
     public class MainWindowViewModel : ViewModelBase
     {
-        private LibVLC _libVlc;
+        //private LibVLC _libVlc;
         private readonly Random _random;
         private readonly YoutubeClient _youtubeClient;
 
-        [Reactive] public MediaPlayer MediaPlayer { get; set; }
+        private CustomMediaPlayer MediaPlayer { get; set; }
 
         [Reactive] public TrackModel? CurrentTrack { get; set; }
         [Reactive] public TimeSpan CurrentPosition { get; set; }
@@ -39,12 +38,23 @@ namespace LivePlayer.UI.ViewModels
         [Reactive] public bool IsFlyoutOpen { get; set; } = true;
         private double LastWidth { get; set; } = 0;
 
+        private int _lastVolume = 100;
+
         public int Volume
         {
-            get => Math.Clamp(MediaPlayer.Volume, 0, 100);
+            get
+            {
+                if (MediaPlayer.State == PlaybackState.Stopped)
+                {
+                    return _lastVolume;
+                }
+
+                return (int)Math.Clamp(MediaPlayer.Volume * 100, 0, 100);
+            }
             set
             {
-                MediaPlayer.Volume = Math.Clamp(value, 0, 100);
+                MediaPlayer.Volume = (double)Math.Clamp(value / 100.0, 0.0, 1.0);
+                _lastVolume = value;
                 this.RaisePropertyChanged(nameof(Volume));
             }
         }
@@ -59,7 +69,7 @@ namespace LivePlayer.UI.ViewModels
 
         [Reactive] public string? UrlInput { get; set; }
 
-        [Reactive] public bool Initializing { get; set; } = true;
+        [Reactive] public bool IsPlaying { get; set; } = false;
 
 
         public MainWindowViewModel()
@@ -67,24 +77,29 @@ namespace LivePlayer.UI.ViewModels
             _random = new Random();
             _youtubeClient = new YoutubeClient();
 
-            //_ = Task.Run(Test);
-            _ = Task.Run(InitializeAsync);
+            var opus = Bass.PluginLoad(@"bassopus.dll");
+            var webm = Bass.PluginLoad(@"basswebm.dll");
+            var aac = Bass.PluginLoad(@"bass_aac.dll");
+            
+            MediaPlayer = new CustomMediaPlayer();
+            Volume = 100;
+
+            MediaPlayer.MediaEnded += MediaPlayer_EndReached;
+            this.RaisePropertyChanged(nameof(Volume));
+
+            _ = Task.Run(PositionWatcher);
         }
 
-        private async Task InitializeAsync()
+        private async Task PositionWatcher()
         {
-            await Task.Delay(1000);
-            //Dispatcher.UIThread.Post(() =>
-            //{
-                Core.Initialize();
-                _libVlc = new LibVLC();
-                MediaPlayer = new MediaPlayer(_libVlc);
-
-                MediaPlayer.PositionChanged += MediaPlayer_PositionChanged;
-                MediaPlayer.EndReached += MediaPlayer_EndReached;
-                this.RaisePropertyChanged(nameof(Volume));
-                Initializing = false;
-            //});
+            while (true)
+            {
+                await Task.Delay(100);
+                if (MediaPlayer.State == PlaybackState.Playing)
+                {
+                    CurrentPosition = MediaPlayer.Position;
+                }
+            }
         }
 
         private void MediaPlayer_EndReached(object? sender, EventArgs e)
@@ -119,6 +134,7 @@ namespace LivePlayer.UI.ViewModels
 
                         File.Delete("Title.txt");
                         File.Delete("Artist.txt");
+                        IsPlaying = false;
                         return;
                     }
                 }
@@ -139,9 +155,12 @@ namespace LivePlayer.UI.ViewModels
                 await CurrentTrack.GetDirectPath();
                 //}
 
-                await Dispatcher.UIThread.InvokeAsync(() =>
+                await Dispatcher.UIThread.InvokeAsync(async () =>
                 {
-                    MediaPlayer.Play(new Media(_libVlc, new Uri(CurrentTrack.DirectPath!)));
+                    //MediaPlayer.Play(new Media(_libVlc, new Uri(CurrentTrack.DirectPath!)));
+                    //MediaPlayer.Stop();
+                    await MediaPlayer.LoadAsync(CurrentTrack.DirectPath!);
+                    IsPlaying = MediaPlayer.Play();
                     //Logger.Sink?.Log(LogEventLevel.Information, "MainVM", this, $"Playing {CurrentTrack.Title}");
                 });
                 if (IsFileOut)
@@ -152,16 +171,16 @@ namespace LivePlayer.UI.ViewModels
             });
         }
 
-        private void MediaPlayer_PositionChanged(object? sender, MediaPlayerPositionChangedEventArgs e)
-        {
-            //Just in case for load Playlist
-            this.RaisePropertyChanged(nameof(QueueLength));
-            //Probably needs math for true position
-            var totalSeconds = CurrentTrack!.Length.TotalSeconds;
-            //to long
-            var position = (long)(totalSeconds * e.Position);
-            CurrentPosition = TimeSpan.FromSeconds(position + 1);
-        }
+        //private void MediaPlayer_PositionChanged(object? sender, PropertyChangedEventArgs e)
+        //{
+        //    ////Just in case for load Playlist
+        //    //this.RaisePropertyChanged(nameof(QueueLength));
+        //    ////Probably needs math for true position
+        //    //var totalSeconds = CurrentTrack!.Length.TotalSeconds;
+        //    ////to long
+        //    //var position = (long)(totalSeconds * e.Position);
+        //    CurrentPosition = MediaPlayer.Position;
+        //}
 
         public void OpenCloseFlyOut(Window window)
         {
@@ -190,29 +209,6 @@ namespace LivePlayer.UI.ViewModels
             Process.Start(ps);
         }
 
-        //public async Task Test()
-        //{
-        //    //await Task.Delay(5000);
-        //    var yt = new YoutubeClient();
-        //    var vid = await yt.Videos.GetAsync("https://www.youtube.com/watch?v=4_J5lGW2CY0");
-        //    var track = new TrackModel(_youtubeClient)
-        //    {
-        //        Artist = vid.Author.ChannelTitle,
-        //        Title = vid.Title,
-        //        Path = "https://www.youtube.com/watch?v=4_J5lGW2CY0",
-        //        Length = vid.Duration,
-        //        CoverUrl = vid.Thumbnails.GetWithHighestResolution().Url,
-        //        IsPlaying = true
-        //    };
-        //    Dispatcher.UIThread.Post(() =>
-        //    {
-        //        Queue.Add(track);
-        //        CurrentTrack = track;
-        //        using var media = new Media(_libVlc, new Uri(track.DirectPath!));
-        //        MediaPlayer.Play(media);
-        //    });
-        //}
-
         public async Task AddSongToQueue()
         {
             if (UrlInput == null)
@@ -226,7 +222,7 @@ namespace LivePlayer.UI.ViewModels
             if (videoId != null)
             {
                 var vid = await _youtubeClient.Videos.GetAsync(UrlInput);
-                var track = new TrackModel(_youtubeClient)
+                var track = new TrackModel(_youtubeClient, Queue)
                 {
                     Artist = vid.Author.ChannelTitle,
                     Title = vid.Title,
@@ -246,7 +242,7 @@ namespace LivePlayer.UI.ViewModels
                 var tracks = await _youtubeClient.Playlists.GetVideosAsync(playlistId.Value);
                 foreach (var track in tracks)
                 {
-                    var t = new TrackModel(_youtubeClient)
+                    var t = new TrackModel(_youtubeClient, Queue)
                     {
                         Artist = track.Author.ChannelTitle,
                         Title = track.Title,
@@ -326,7 +322,7 @@ namespace LivePlayer.UI.ViewModels
             Queue.Clear();
             foreach (var path in pls.FilePaths)
             {
-                var track = new TrackModel(_youtubeClient)
+                var track = new TrackModel(_youtubeClient, Queue)
                 {
                     Path = path,
                     IsPlaying = false
@@ -348,7 +344,7 @@ namespace LivePlayer.UI.ViewModels
 
         #region MediaButtons
 
-        public async Task PlayPause()
+        public async Task Play()
         {
             if (QueueSelectedTrack != null)
             {
@@ -364,8 +360,8 @@ namespace LivePlayer.UI.ViewModels
                 await CurrentTrack.GetDirectPath();
                 //}
 
-                using var media = new Media(_libVlc, new Uri(QueueSelectedTrack.DirectPath!));
-                MediaPlayer.Play(media);
+                await MediaPlayer.LoadAsync(CurrentTrack.DirectPath!);
+                IsPlaying = MediaPlayer.Play();
                 CurrentTrack.IsPlaying = true;
                 if (IsFileOut)
                 {
@@ -377,7 +373,14 @@ namespace LivePlayer.UI.ViewModels
                 return;
             }
 
-            MediaPlayer.SetPause(MediaPlayer.IsPlaying);
+            MediaPlayer.Play();
+            IsPlaying = true;
+        }
+        
+        public void Pause()
+        {
+            MediaPlayer.Pause();
+            IsPlaying = false;
         }
 
         public void Stop()
@@ -388,6 +391,7 @@ namespace LivePlayer.UI.ViewModels
             CurrentTrack!.IsPlaying = false;
             CurrentPosition = TimeSpan.Zero;
             MediaPlayer.Stop();
+            IsPlaying = false;
 
             if (!IsFileOut)
                 return;
@@ -405,7 +409,7 @@ namespace LivePlayer.UI.ViewModels
         {
             if (CurrentPosition.TotalSeconds > 5 || LastPlayed.Count == 0)
             {
-                MediaPlayer.Position = 0f;
+                MediaPlayer.Position = TimeSpan.Zero;
             }
             else
             {
@@ -415,8 +419,9 @@ namespace LivePlayer.UI.ViewModels
                 CurrentTrack = prevSong;
                 CurrentTrack.IsPlaying = true;
                 CurrentPosition = TimeSpan.Zero;
-                using var media = new Media(_libVlc, new Uri(prevSong.DirectPath!));
-                MediaPlayer.Play(media);
+                
+                await MediaPlayer.LoadAsync(CurrentTrack.DirectPath!);
+                IsPlaying = MediaPlayer.Play();
                 if (IsFileOut)
                 {
                     await File.WriteAllTextAsync("Title.txt", CurrentTrack.Title);
