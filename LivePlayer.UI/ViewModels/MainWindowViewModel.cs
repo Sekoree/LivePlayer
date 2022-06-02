@@ -7,6 +7,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using ATL.Playlist;
 using Avalonia.Controls;
+using Avalonia.Input.Platform;
 using Avalonia.Threading;
 using LivePlayer.UI.Models;
 using ManagedBass;
@@ -38,23 +39,30 @@ namespace LivePlayer.UI.ViewModels
         [Reactive] public bool IsFlyoutOpen { get; set; } = true;
         private double LastWidth { get; set; } = 0;
 
-        private int _lastVolume = 100;
+        private double _lastVolume = 0.1;
 
-        public int Volume
+        public double Volume
         {
             get
             {
-                if (MediaPlayer.State == PlaybackState.Stopped)
+                if (MediaPlayer.State != PlaybackState.Playing)
                 {
-                    return _lastVolume;
+                    var val2 = Math.Sqrt(Math.Sqrt(_lastVolume));
+                    return Math.Round(val2 * 100, 3, MidpointRounding.ToZero);
                 }
-
-                return (int)Math.Clamp(MediaPlayer.Volume * 100, 0, 100);
+                
+                //Natural volume curve
+                var val = Math.Sqrt(Math.Sqrt(MediaPlayer.Volume));
+                
+                return Math.Round(val * 100, 3, MidpointRounding.ToZero);
             }
             set
             {
-                MediaPlayer.Volume = (double)Math.Clamp(value / 100.0, 0.0, 1.0);
-                _lastVolume = value;
+                var val = Math.Clamp(value / 100, 0.0, 1.0);
+                val = Math.Pow(val, 4.0);
+                
+                MediaPlayer.Volume = val;
+                _lastVolume = val;
                 this.RaisePropertyChanged(nameof(Volume));
             }
         }
@@ -81,8 +89,10 @@ namespace LivePlayer.UI.ViewModels
             var webm = Bass.PluginLoad(@"basswebm.dll");
             var aac = Bass.PluginLoad(@"bass_aac.dll");
             
-            MediaPlayer = new CustomMediaPlayer();
-            Volume = 100;
+            MediaPlayer = new CustomMediaPlayer()
+            {
+                Volume = _lastVolume
+            };
 
             MediaPlayer.MediaEnded += MediaPlayer_EndReached;
             this.RaisePropertyChanged(nameof(Volume));
@@ -160,6 +170,8 @@ namespace LivePlayer.UI.ViewModels
                     //MediaPlayer.Play(new Media(_libVlc, new Uri(CurrentTrack.DirectPath!)));
                     //MediaPlayer.Stop();
                     await MediaPlayer.LoadAsync(CurrentTrack.DirectPath!);
+                    //Volume = _lastVolume;
+                    MediaPlayer.Volume = _lastVolume;
                     IsPlaying = MediaPlayer.Play();
                     //Logger.Sink?.Log(LogEventLevel.Information, "MainVM", this, $"Playing {CurrentTrack.Title}");
                 });
@@ -361,6 +373,8 @@ namespace LivePlayer.UI.ViewModels
                 //}
 
                 await MediaPlayer.LoadAsync(CurrentTrack.DirectPath!);
+                //Volume = _lastVolume;
+                MediaPlayer.Volume = _lastVolume;
                 IsPlaying = MediaPlayer.Play();
                 CurrentTrack.IsPlaying = true;
                 if (IsFileOut)
@@ -372,7 +386,9 @@ namespace LivePlayer.UI.ViewModels
                 QueueSelectedTrack = null;
                 return;
             }
-
+            
+            //Volume = _lastVolume;
+            MediaPlayer.Volume = _lastVolume;
             MediaPlayer.Play();
             IsPlaying = true;
         }
@@ -421,6 +437,8 @@ namespace LivePlayer.UI.ViewModels
                 CurrentPosition = TimeSpan.Zero;
                 
                 await MediaPlayer.LoadAsync(CurrentTrack.DirectPath!);
+                MediaPlayer.Volume = _lastVolume;
+                //Volume = _lastVolume;
                 IsPlaying = MediaPlayer.Play();
                 if (IsFileOut)
                 {

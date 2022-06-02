@@ -44,13 +44,19 @@
         <!--Condition below is needed to remove Avalonia.Diagnostics package from build output in Release configuration.-->
         <PackageReference Condition="'$(Configuration)' == 'Debug'" Include="Avalonia.Diagnostics" Version="0.10.14" />
         <PackageReference Include="Avalonia.ReactiveUI" Version="0.10.14" />
-        <PackageReference Include="Avalonia.Svg" Version="0.10.13" />
+        <PackageReference Include="Avalonia.Svg" Version="0.10.14" />
         <PackageReference Include="BASS" Version="2.4.12.1" />
         <PackageReference Include="ManagedBass" Version="3.1.1" />
         <PackageReference Include="ManagedBass.Opus" Version="3.1.1" />
         <PackageReference Include="ReactiveUI.Fody" Version="18.0.10" />
         <PackageReference Include="XamlNameReferenceGenerator" Version="1.3.4" />
         <PackageReference Include="YoutubeExplode" Version="6.1.2" />
-        <PackageReference Include="z440.atl.core" Version="4.6.0" />
+        <PackageReference Include="z440.atl.core" Version="4.7.0" />
+    </ItemGroup>
+    <ItemGroup>
+      <Compile Remove="Controls\SearchResult.axaml.cs" />
+    </ItemGroup>
+    <ItemGroup>
+      <AvaloniaXaml Remove="Controls\SearchResult.axaml" />
     </ItemGroup>
 </Project>

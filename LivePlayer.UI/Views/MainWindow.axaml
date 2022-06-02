@@ -109,6 +109,8 @@
                 Grid.Row="5"
                 Margin="10,0"
                 Value="{Binding Volume}"
+                Maximum="100.0" Ticks="0.1"
+                Minimum="0.0"
                 HorizontalAlignment="Stretch"
                 VerticalAlignment="Center" />
 

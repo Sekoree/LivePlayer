@@ -8,6 +8,7 @@
         <entry key="LivePlayer.UI/Controls/MediaControls.axaml" value="LivePlayer.UI/LivePlayer.UI.csproj" />
         <entry key="LivePlayer.UI/Controls/MediaControlsControl.axaml" value="LivePlayer.UI/LivePlayer.UI.csproj" />
         <entry key="LivePlayer.UI/Controls/QueueEntry.axaml" value="LivePlayer.UI/LivePlayer.UI.csproj" />
+        <entry key="LivePlayer.UI/Controls/SearchResult.axaml" value="LivePlayer.UI/LivePlayer.UI.csproj" />
         <entry key="LivePlayer.UI/Views/MainWindow.axaml" value="LivePlayer.UI/LivePlayer.UI.csproj" />
         <entry key="LivePlayer.UI/Views/VideoViewer.axaml" value="LivePlayer.UI/LivePlayer.UI.csproj" />
       </map>

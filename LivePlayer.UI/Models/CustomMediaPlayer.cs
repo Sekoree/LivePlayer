@@ -21,7 +21,7 @@ public class CustomMediaPlayer : MediaPlayer
         if (!Uri.TryCreate(fileName, UriKind.Absolute, out var uri) || uri.Scheme == "file") 
             return 0;
 
-        var create = Bass.CreateStream(fileName, 0, BassFlags.StreamDownloadBlocks, null, IntPtr.Zero);
+        var create = Bass.CreateStream(fileName, 0, 0, null, IntPtr.Zero);
         if (create == 0)
             throw new Exception(Bass.LastError.ToString());
 
