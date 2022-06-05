@@ -4,6 +4,7 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
+using Avalonia.Markup.Xaml;
 using LivePlayer.UI.Controls;
 using LivePlayer.UI.Models;
 using LivePlayer.UI.ViewModels;
@@ -17,24 +18,9 @@ namespace LivePlayer.UI.Views
             InitializeComponent();
         }
 
-        private void InputElement_OnKeyDown(object? sender, KeyEventArgs e)
+        private void InitializeComponent()
         {
-            if (e.Key != Key.Enter) return;
-            if (DataContext is MainWindowViewModel dContext)
-            {
-                _ = Task.Run(() => dContext.AddSongToQueue());
-            }
-        }
-
-        private void InputElement_OnDoubleTapped(object? sender, RoutedEventArgs e)
-        {
-            if (DataContext is not MainWindowViewModel dContext) 
-                return;
-            if (sender is not QueueEntry { DataContext: TrackModel track }) 
-                return;
-            
-            dContext.QueueSelectedTrack = track;
-            _ = Task.Run(() => dContext.Play());
+            AvaloniaXamlLoader.Load(this);
         }
     }
 }

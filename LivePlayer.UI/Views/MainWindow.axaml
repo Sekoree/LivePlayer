@@ -95,7 +95,8 @@
                                 PauseCommand="{Binding Pause}"
                                 PlayCommand="{Binding Play}"
                                 FastForwardCommand="{Binding FastForward}"
-                                IsPlaying="{Binding IsPlaying}" />
+                                IsPlaying="{Binding IsPlaying}"
+                                CanFastForward="{Binding CanFastForward}"/>
 
         <TextBlock Grid.Column="0"
                    Grid.Row="5"
@@ -187,113 +188,55 @@
                    VerticalAlignment="Center"
                    Source="avares://LivePlayer/Assets/GitHub-Mark-Light-120px-plus.png" />
         </Button>
-
-        <Button Grid.Column="0"
-                Grid.Row="7"
-                Margin="5"
-                Padding="2.5"
-                Height="25"
-                HorizontalAlignment="Right"
-                VerticalAlignment="Bottom"
-                Command="{Binding OpenCloseFlyOut}"
-                CommandParameter="{Binding .,RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type Window}}}">
-            <Svg HorizontalAlignment="Center"
-                 VerticalAlignment="Center"
-                 Path="avares://LivePlayer/Assets/close_fullscreen_white_48dp.svg"/>
         
-        </Button>
-
         <GridSplitter Grid.Column="1"
                       Grid.Row="0"
                       Grid.RowSpan="8"
-                      IsVisible="{Binding IsFlyoutOpen}"
                       ResizeBehavior="PreviousAndNext"
                       Width="1"
                       Foreground="White"
                       Background="White" />
 
+        <TabControl Grid.Column="2"
+                    Grid.Row="0"
+                    Grid.RowSpan="8"
+                    TabStripPlacement="Top"
+                    SelectedIndex="1"
+                    Padding="0"
+                    Margin="5,25,5,0">
+            <TabItem Header="Playlist">
+                
+                <controls:Playlist HorizontalAlignment="Stretch"
+                                   HorizontalContentAlignment="Stretch"
+                                   VerticalAlignment="Stretch"
+                                   VerticalContentAlignment="Stretch"
+                                   DataContext="{Binding .}"/>
+                
+            </TabItem>
+            <TabItem Header="Next Up">
+                
+                <controls:NextUp HorizontalAlignment="Stretch"
+                                 HorizontalContentAlignment="Stretch"
+                                 VerticalAlignment="Stretch"
+                                 VerticalContentAlignment="Stretch"
+                                 DataContext="{Binding .}"/>
+                
+            </TabItem>
+            <TabItem Header="History">
 
-        <Grid Grid.Column="2"
-              Grid.Row="0"
-              Grid.RowSpan="8"
-              IsVisible="{Binding IsFlyoutOpen}"
-              Margin="5,35,5,0"
-              HorizontalAlignment="Stretch"
-              VerticalAlignment="Stretch"
-              RowDefinitions="Auto, Auto, *"
-              ColumnDefinitions="*, Auto"
-              ShowGridLines="False">
+                <controls:History HorizontalAlignment="Stretch"
+                                  HorizontalContentAlignment="Stretch"
+                                  VerticalAlignment="Stretch"
+                                  VerticalContentAlignment="Stretch"
+                                  DataContext="{Binding .}"/>
+                
+            </TabItem>
+            <TabItem Header="Search" IsEnabled="False">
 
-            <StackPanel Grid.Column="0"
-                        Grid.ColumnSpan="2"
-                        Grid.Row="0"
-                        Margin="0,0,0,10"
-                        HorizontalAlignment="Center"
-                        Orientation="Horizontal">
-                <Button Content="Save Playlist"
-                        Command="{Binding SavePlaylist}"
-                        CommandParameter="{Binding RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type Window}}}" />
-                <Button Content="Load Playlist"
-                        Command="{Binding LoadPlaylist}"
-                        CommandParameter="{Binding RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type Window}}}" />
-                <Button Content="Clear List"
-                        Background="#662222"
-                        Command="{Binding ClearQueue}" />
-            </StackPanel>
-
-            <TextBox Grid.Column="0"
-                     Grid.Row="1"
-                     CornerRadius="3,0,0,0"
-                     BorderThickness="1,1,0,1"
-                     Text="{Binding UrlInput}"
-                     KeyDown="InputElement_OnKeyDown"
-                     Watermark="YouTube Video/Playlist URL" />
-
-            <Button Grid.Column="1"
-                    Grid.Row="1"
-                    CornerRadius="0,3,0,0"
-                    VerticalAlignment="Stretch"
-                    HorizontalAlignment="Stretch"
-                    BorderBrush="White"
-                    BorderThickness="0,1,1,1"
-                    Content="Add"
-                    Command="{Binding AddSongToQueue}" />
-
-            <ListBox Grid.Column="0"
-                     Grid.ColumnSpan="2"
-                     Grid.Row="2"
-                     Margin="0,0,0,5"
-                     CornerRadius="0,0,3,3"
-                     SelectionMode="Toggle"
-                     SelectedItem="{Binding QueueSelectedTrack}"
-                     Items="{Binding Queue}">
-
-                <ListBox.ItemTemplate>
-                    <DataTemplate DataType="models:TrackModel">
-                        <controls:QueueEntry HorizontalAlignment="Stretch"
-                                             Track="{Binding .}"
-                                             IsPlaying="{Binding IsPlaying, Mode=TwoWay}"
-                                             CornerRadius="3"
-                                             Padding="5"
-                                             BorderBrush="White"
-                                             DoubleTapped="InputElement_OnDoubleTapped" />
-                    </DataTemplate>
-                </ListBox.ItemTemplate>
-
-                <ListBox.Styles>
-                    <Styles>
-                        <Style Selector="controls|QueueEntry:isPlaying">
-                            <Setter Property="BorderThickness" Value="2" />
-                        </Style>
-                        <Style Selector="ListBoxItem">
-                            <Setter Property="Padding" Value="0" />
-                        </Style>
-                    </Styles>
-                </ListBox.Styles>
-
-            </ListBox>
-
-        </Grid>
+                <TextBlock Text="No idea how you got here bot soon™ (and helo :>)"/>
+                
+            </TabItem>
+        </TabControl>
 
     </Grid>
 

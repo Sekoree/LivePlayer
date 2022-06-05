@@ -26,6 +26,24 @@ public partial class MediaControls : UserControl
         set => SetValue(IsPlayingProperty, value);
     }
     
+    public static readonly StyledProperty<bool> CanFastRewindProperty =
+        AvaloniaProperty.Register<MediaControls, bool>(nameof(CanFastRewind));
+
+    public bool CanFastRewind
+    {
+        get => GetValue(CanFastRewindProperty);
+        set => SetValue(CanFastRewindProperty, value);
+    }
+    
+    public static readonly StyledProperty<bool> CanFastForwardProperty =
+        AvaloniaProperty.Register<MediaControls, bool>(nameof(CanFastForward));
+
+    public bool CanFastForward
+    {
+        get => GetValue(CanFastForwardProperty);
+        set => SetValue(CanFastForwardProperty, value);
+    }
+    
     public static readonly DirectProperty<MediaControls, ICommand> PlayCommandProperty =
         AvaloniaProperty.RegisterDirect<MediaControls, ICommand>(nameof(PlayCommand),
             control => control.PlayCommand, (control, command) => control.PlayCommand = command);

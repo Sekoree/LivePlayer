@@ -40,6 +40,7 @@
         <Button Grid.Column="3"
                 HorizontalAlignment="Stretch"
                 CornerRadius="0,3,3,0"
+                IsEnabled="{Binding CanFastForward, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type UserControl}}}"
                 Command="{Binding FastForwardCommand, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type UserControl}}}">
                 <Svg Path="avares://LivePlayer/Assets/fast_forward_white_48dp.svg"/>
         </Button>

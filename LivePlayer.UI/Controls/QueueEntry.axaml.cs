@@ -1,7 +1,10 @@
-﻿using Avalonia;
+﻿using System.Threading.Tasks;
+using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Metadata;
+using Avalonia.Interactivity;
 using Avalonia.Markup.Xaml;
+using Avalonia.Threading;
 using LivePlayer.UI.Models;
 
 namespace LivePlayer.UI.Controls;
@@ -44,5 +47,15 @@ public partial class QueueEntry : UserControl
         {
             PseudoClasses.Set(":isPlaying", change.NewValue.GetValueOrDefault<bool>());
         }
+    }
+
+    private async Task CopyUrlToClipboard()
+    {
+        await Application.Current!.Clipboard!.SetTextAsync(Track.Path!);
+    }
+
+    private void MenuItem_OnClick(object? sender, RoutedEventArgs e)
+    {
+        _ = Dispatcher.UIThread.InvokeAsync(CopyUrlToClipboard);
     }
 }

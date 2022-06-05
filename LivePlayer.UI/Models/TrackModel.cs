@@ -20,13 +20,14 @@ public class TrackModel : ReactiveObject
     [Reactive] public TimeSpan Length { get; set; } = TimeSpan.Zero;
     [Reactive] public string? CoverUrl { get; set; }
     [Reactive] public bool IsPlaying { get; set; }
-    
-    private ObservableCollection<TrackModel> _parentCollection;
+    [Reactive] public bool CanDelete { get; set; }
+    private readonly ObservableCollection<TrackModel>? _parent;
 
-    public TrackModel(YoutubeClient client, ObservableCollection<TrackModel> parentCollection)
+    public TrackModel(YoutubeClient client, ObservableCollection<TrackModel>? parent = null)
     {
         _client = client;
-        _parentCollection = parentCollection;
+        CanDelete = parent != null;
+        _parent = parent;
     }
 
     public async Task<string> GetDirectPath()
@@ -51,8 +52,10 @@ public class TrackModel : ReactiveObject
         CoverUrl = video.Thumbnails.GetWithHighestResolution().Url;
     }
     
-    public void RemoveThis()
+    public void Delete()
     {
-        _parentCollection.Remove(this);
+        if (_parent == null)
+            return;
+        _parent.Remove(this);
     }
 }

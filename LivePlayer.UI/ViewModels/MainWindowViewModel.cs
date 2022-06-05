@@ -6,7 +6,9 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using ATL.Playlist;
+using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Input.Platform;
 using Avalonia.Threading;
 using LivePlayer.UI.Models;
@@ -26,7 +28,7 @@ namespace LivePlayer.UI.ViewModels
         private readonly Random _random;
         private readonly YoutubeClient _youtubeClient;
 
-        private CustomMediaPlayer MediaPlayer { get; set; }
+        private readonly CustomMediaPlayer _mediaPlayer;
 
         [Reactive] public TrackModel? CurrentTrack { get; set; }
         [Reactive] public TimeSpan CurrentPosition { get; set; }
@@ -36,8 +38,10 @@ namespace LivePlayer.UI.ViewModels
         [Reactive] public bool IsShuffle { get; set; }
         [Reactive] public bool IsFileOut { get; set; }
 
-        [Reactive] public bool IsFlyoutOpen { get; set; } = true;
-        private double LastWidth { get; set; } = 0;
+        [Reactive] public bool IsPlaying { get; set; } = false;
+        
+        [Reactive] public bool CanFastForward { get; set; } = true;
+
 
         private double _lastVolume = 0.1;
 
@@ -45,39 +49,52 @@ namespace LivePlayer.UI.ViewModels
         {
             get
             {
-                if (MediaPlayer.State != PlaybackState.Playing)
+                if (_mediaPlayer.State != PlaybackState.Playing)
                 {
                     var val2 = Math.Sqrt(Math.Sqrt(_lastVolume));
                     return Math.Round(val2 * 100, 3, MidpointRounding.ToZero);
                 }
-                
+
                 //Natural volume curve
-                var val = Math.Sqrt(Math.Sqrt(MediaPlayer.Volume));
-                
+                var val = Math.Sqrt(Math.Sqrt(_mediaPlayer.Volume));
+
                 return Math.Round(val * 100, 3, MidpointRounding.ToZero);
             }
             set
             {
                 var val = Math.Clamp(value / 100, 0.0, 1.0);
                 val = Math.Pow(val, 4.0);
-                
-                MediaPlayer.Volume = val;
+
+                _mediaPlayer.Volume = val;
                 _lastVolume = val;
                 this.RaisePropertyChanged(nameof(Volume));
             }
         }
 
-        [Reactive] public ObservableCollection<TrackModel> Queue { get; set; } = new();
-        private ObservableCollection<TrackModel> LastPlayed { get; set; } = new();
 
-        public int QueueCount => Queue.Count;
-        public TimeSpan QueueLength => TimeSpan.FromSeconds(Queue.Sum(x => x.Length.TotalSeconds));
+        #region PlaylistTab
 
-        [Reactive] public TrackModel? QueueSelectedTrack { get; set; }
+        [Reactive] public ObservableCollection<TrackModel> Playlist { get; set; } = new();
+        [Reactive] public TrackModel? PlaylistSelectedTrack { get; set; }
+        [Reactive] public string? PlaylistAddUrl { get; set; }
 
-        [Reactive] public string? UrlInput { get; set; }
+        #endregion
 
-        [Reactive] public bool IsPlaying { get; set; } = false;
+        #region NextUpTab
+
+        [Reactive] public ObservableCollection<TrackModel> NextUp { get; set; } = new();
+        [Reactive] public TrackModel? NextUpSelectedTrack { get; set; }
+        [Reactive] public string? NextUpAddUrl { get; set; }
+        [Reactive] public bool NextUpDoInsert { get; set; } = true;
+
+        #endregion
+
+        #region HistoryTab
+
+        [Reactive] public ObservableCollection<TrackModel> History { get; set; } = new();
+        [Reactive] public TrackModel? HistorySelectedTrack { get; set; }
+
+        #endregion
 
 
         public MainWindowViewModel()
@@ -88,13 +105,13 @@ namespace LivePlayer.UI.ViewModels
             var opus = Bass.PluginLoad(@"bassopus.dll");
             var webm = Bass.PluginLoad(@"basswebm.dll");
             var aac = Bass.PluginLoad(@"bass_aac.dll");
-            
-            MediaPlayer = new CustomMediaPlayer()
+
+            _mediaPlayer = new CustomMediaPlayer()
             {
                 Volume = _lastVolume
             };
 
-            MediaPlayer.MediaEnded += MediaPlayer_EndReached;
+            _mediaPlayer.MediaEnded += MediaPlayer_EndReached;
             this.RaisePropertyChanged(nameof(Volume));
 
             _ = Task.Run(PositionWatcher);
@@ -105,9 +122,9 @@ namespace LivePlayer.UI.ViewModels
             while (true)
             {
                 await Task.Delay(100);
-                if (MediaPlayer.State == PlaybackState.Playing)
+                if (_mediaPlayer.State == PlaybackState.Playing)
                 {
-                    CurrentPosition = MediaPlayer.Position;
+                    CurrentPosition = _mediaPlayer.Position;
                 }
             }
         }
@@ -117,64 +134,109 @@ namespace LivePlayer.UI.ViewModels
             if (CurrentTrack == null)
                 return;
 
+            
+            
+            CanFastForward = false;
             //Start next song
+            History.Insert(0, CurrentTrack);
             TrackModel? nextTrack = null;
             CurrentTrack!.IsPlaying = false;
+
             if (IsShuffle)
             {
-                //Get random track
-                nextTrack = Queue[_random.Next(Queue.Count)];
-                while (nextTrack == CurrentTrack && Queue.Count > 1)
-                    nextTrack = Queue[_random.Next(Queue.Count)];
+                NextUp.RemoveAt(0);
+                nextTrack = NextUp.FirstOrDefault();
+                if (nextTrack == null)
+                {
+                    nextTrack = Playlist.FirstOrDefault(x => !IsLooping && x != CurrentTrack);
+                    if (nextTrack == null)
+                    {
+                        CanFastForward = true;
+                        return;
+                    }
+
+                    NextUp.Add(nextTrack);
+                }
+
+                while (NextUp.Count < 6 && Playlist.Count > 1)
+                {
+                    var trackToAdd = Playlist[_random.Next(Playlist.Count)];
+                    if (Playlist.All(x => NextUp.Any(y => x == y)))
+                        break;
+                    if (NextUp.Contains(trackToAdd))
+                        continue;
+                    NextUp.Add(trackToAdd);
+                }
+            }
+            else if (IsLooping)
+            {
+                NextUp.RemoveAt(0);
+                nextTrack = NextUp.FirstOrDefault();
+                if (nextTrack == null)
+                {
+                    nextTrack = Playlist.FirstOrDefault();
+                    if (nextTrack == null)
+                    {
+                        CanFastForward = true;
+                        return;
+                    }
+
+                    NextUp.Add(nextTrack);
+                }
+
+                var trackIndex = Playlist.IndexOf(nextTrack!);
+                while (NextUp.Count < 6 && Playlist.Count > 1)
+                {
+                    if (trackIndex + 1 >= Playlist.Count)
+                        trackIndex = 0;
+                    else
+                        trackIndex++;
+                    var nextTrackNextUp = Playlist[trackIndex];
+
+                    if (Playlist.All(x => NextUp.Any(y => x == y)))
+                        break;
+                    if (NextUp.Contains(nextTrackNextUp))
+                        continue;
+                    NextUp.Add(nextTrackNextUp);
+                }
             }
             else
             {
-                var nextIndex = Queue.IndexOf(CurrentTrack!) + 1;
-                if (nextIndex >= Queue.Count)
+                NextUp.RemoveAt(0);
+                nextTrack = NextUp.FirstOrDefault();
+                if (nextTrack == null)
                 {
-                    if (IsLooping)
-                    {
-                        nextTrack = Queue[0];
-                    }
-                    else
-                    {
-                        LastPlayed.Insert(0, CurrentTrack);
-                        if (!IsFileOut)
-                            return;
-
-                        File.Delete("Title.txt");
-                        File.Delete("Artist.txt");
-                        IsPlaying = false;
-                        return;
-                    }
+                    CanFastForward = true;
+                    return;
                 }
-                else
+
+                var trackIndex = Playlist.IndexOf(nextTrack!);
+                while (NextUp.Count < 6 && Playlist.Count > 1)
                 {
-                    nextTrack = Queue[nextIndex];
+                    if (trackIndex + 1 >= Playlist.Count)
+                        break;
+                    trackIndex++;
+                    var nextTrackNextUp = Playlist[trackIndex];
+
+                    if (Playlist.All(x => NextUp.Any(y => x == y)))
+                        break;
+                    if (NextUp.Contains(nextTrackNextUp))
+                        continue;
+                    NextUp.Add(nextTrackNextUp);
                 }
             }
 
-            LastPlayed.Insert(0, CurrentTrack);
+            //NextUp.Insert(0, nextTrack!);
+            nextTrack.IsPlaying = true;
             CurrentTrack = nextTrack;
-            CurrentTrack!.IsPlaying = true;
-            CurrentPosition = TimeSpan.Zero;
-            _ = Task.Run(async () =>
+            _ = Dispatcher.UIThread.InvokeAsync(async () =>
             {
-                //if (string.IsNullOrWhiteSpace(CurrentTrack.DirectPath))
-                //{
-                await CurrentTrack.GetDirectPath();
-                //}
-
-                await Dispatcher.UIThread.InvokeAsync(async () =>
-                {
-                    //MediaPlayer.Play(new Media(_libVlc, new Uri(CurrentTrack.DirectPath!)));
-                    //MediaPlayer.Stop();
-                    await MediaPlayer.LoadAsync(CurrentTrack.DirectPath!);
-                    //Volume = _lastVolume;
-                    MediaPlayer.Volume = _lastVolume;
-                    IsPlaying = MediaPlayer.Play();
-                    //Logger.Sink?.Log(LogEventLevel.Information, "MainVM", this, $"Playing {CurrentTrack.Title}");
-                });
+                await CurrentTrack!.GetDirectPath();
+                _mediaPlayer.Stop();
+                await _mediaPlayer.LoadAsync(CurrentTrack!.DirectPath);
+                _mediaPlayer.Play();
+                CanFastForward = true;
+            
                 if (IsFileOut)
                 {
                     await File.WriteAllTextAsync("Title.txt", CurrentTrack.Title);
@@ -183,108 +245,206 @@ namespace LivePlayer.UI.ViewModels
             });
         }
 
-        //private void MediaPlayer_PositionChanged(object? sender, PropertyChangedEventArgs e)
-        //{
-        //    ////Just in case for load Playlist
-        //    //this.RaisePropertyChanged(nameof(QueueLength));
-        //    ////Probably needs math for true position
-        //    //var totalSeconds = CurrentTrack!.Length.TotalSeconds;
-        //    ////to long
-        //    //var position = (long)(totalSeconds * e.Position);
-        //    CurrentPosition = MediaPlayer.Position;
-        //}
-
-        public void OpenCloseFlyOut(Window window)
+        public async Task PlayTrack(TrackModel? track)
         {
-            IsFlyoutOpen = !IsFlyoutOpen;
-            //Idk lol
-
-            if (IsFlyoutOpen)
+            if (track == null)
+                return;
+            if (CurrentTrack != null)
             {
-                window.SizeToContent = SizeToContent.Manual;
-                window.Width = LastWidth;
+                CurrentTrack.IsPlaying = false;
+                History.Insert(0, CurrentTrack);
+            }
+
+            await track.GetDirectPath();
+
+            if (IsShuffle)
+            {
+                NextUp.Clear();
+                NextUp.Add(track);
+                while (NextUp.Count < 6 && Playlist.Count > 1)
+                {
+                    var nextTrack = Playlist[_random.Next(Playlist.Count)];
+                    if (NextUp.Contains(nextTrack))
+                        continue;
+                    if (Playlist.All(x => NextUp.Any(y => x == y)))
+                        break;
+                    NextUp.Add(nextTrack);
+                }
+            }
+            else if (IsLooping)
+            {
+                NextUp.Clear();
+                NextUp.Add(track);
+                var trackIndex = Playlist.IndexOf(track);
+                while (NextUp.Count < 6 && Playlist.Count > 1)
+                {
+                    if (trackIndex + 1 >= Playlist.Count)
+                        trackIndex = 0;
+                    else
+                        trackIndex++;
+                    var nextTrack = Playlist[trackIndex];
+
+                    if (NextUp.Contains(nextTrack))
+                        continue;
+                    if (Playlist.All(x => NextUp.Any(y => x == y)))
+                        break;
+                    NextUp.Add(nextTrack);
+                }
             }
             else
             {
-                LastWidth = window.ClientSize.Width;
-                window.SizeToContent = SizeToContent.Width;
+                NextUp.Clear();
+                NextUp.Add(track);
+                var trackIndex = Playlist.IndexOf(track);
+                while (NextUp.Count < 6 && Playlist.Count > 1)
+                {
+                    if (trackIndex + 1 >= Playlist.Count)
+                        break;
+                    trackIndex++;
+                    var nextTrack = Playlist[trackIndex];
+
+                    if (NextUp.Contains(nextTrack))
+                        continue;
+                    if (Playlist.All(x => NextUp.Any(y => x == y)))
+                        break;
+                    NextUp.Add(nextTrack);
+                }
             }
+
+
+            await Dispatcher.UIThread.InvokeAsync(async () =>
+            {
+                CurrentTrack = track;
+                _mediaPlayer.Stop();
+                await _mediaPlayer.LoadAsync(track.DirectPath!);
+                _mediaPlayer.Volume = _lastVolume;
+                CurrentTrack!.IsPlaying = true;
+                IsPlaying = _mediaPlayer.Play();
+                
+                if (IsFileOut)
+                {
+                    await File.WriteAllTextAsync("Title.txt", CurrentTrack.Title);
+                    await File.WriteAllTextAsync("Artist.txt", CurrentTrack.Artist);
+                }
+            });
         }
 
-        public void OpenSourceRepo()
+        public async Task AddTracksToPlaylist()
         {
-            var ps = new ProcessStartInfo("https://github.com/Sekoree/LivePlayer")
-            {
-                UseShellExecute = true,
-                Verb = "open"
-            };
-            Process.Start(ps);
-        }
+            if (string.IsNullOrWhiteSpace(PlaylistAddUrl))
+                return;
 
-        public async Task AddSongToQueue()
-        {
-            if (UrlInput == null)
+            var videoId = VideoId.TryParse(PlaylistAddUrl);
+            var playlistId = PlaylistId.TryParse(PlaylistAddUrl);
+            if (videoId == null && playlistId == null)
             {
+                PlaylistAddUrl = "Invalid URL";
+                await Task.Delay(2500);
+                PlaylistAddUrl = string.Empty;
                 return;
             }
-
-            var videoId = VideoId.TryParse(UrlInput);
-            var playlistId = PlaylistId.TryParse(UrlInput);
 
             if (videoId != null)
             {
-                var vid = await _youtubeClient.Videos.GetAsync(UrlInput);
-                var track = new TrackModel(_youtubeClient, Queue)
+                var video = await _youtubeClient.Videos.GetAsync(videoId.Value);
+                //Maybe check if Video or Live
+                var track = new TrackModel(_youtubeClient, Playlist)
                 {
-                    Artist = vid.Author.ChannelTitle,
-                    Title = vid.Title,
-                    Path = $"https://www.youtube.com/watch?v={vid.Id}",
-                    Length = vid.Duration ?? TimeSpan.Zero,
-                    CoverUrl = vid.Thumbnails.GetWithHighestResolution().Url,
-                    IsPlaying = false
+                    Artist = video.Author.ChannelTitle,
+                    Title = video.Title,
+                    Path = "https://www.youtube.com/watch?v=" + video.Id,
+                    CoverUrl = video.Thumbnails.GetWithHighestResolution().Url,
+                    Length = video.Duration.GetValueOrDefault(),
                 };
-                Queue.Add(track);
-                this.RaisePropertyChanged(nameof(QueueCount));
-                this.RaisePropertyChanged(nameof(QueueLength));
-                UrlInput = null;
-                return;
+                Playlist.Add(track);
             }
-            else if (playlistId != null)
+
+            else if (videoId == null && playlistId != null)
             {
-                var tracks = await _youtubeClient.Playlists.GetVideosAsync(playlistId.Value);
-                foreach (var track in tracks)
+                var plsVideos = await _youtubeClient.Playlists.GetVideosAsync(playlistId.Value);
+                foreach (var video in plsVideos)
                 {
-                    var t = new TrackModel(_youtubeClient, Queue)
+                    var track = new TrackModel(_youtubeClient, Playlist)
                     {
-                        Artist = track.Author.ChannelTitle,
-                        Title = track.Title,
-                        Path = $"https://www.youtube.com/watch?v={track.Id}",
-                        Length = track.Duration ?? TimeSpan.Zero,
-                        CoverUrl = track.Thumbnails.GetWithHighestResolution().Url,
-                        IsPlaying = false
+                        Artist = video.Author.ChannelTitle,
+                        Title = video.Title,
+                        Path = "https://www.youtube.com/watch?v=" + video.Id,
+                        CoverUrl = video.Thumbnails.GetWithHighestResolution().Url,
+                        Length = video.Duration.GetValueOrDefault(),
                     };
-                    Queue.Add(t);
-                    this.RaisePropertyChanged(nameof(QueueCount));
-                    this.RaisePropertyChanged(nameof(QueueLength));
+                    Playlist.Add(track);
                 }
+            }
 
-                UrlInput = null;
+            PlaylistAddUrl = string.Empty;
+        }
+        
+        
+        public async Task AddTracksToNextUp()
+        {
+            if (string.IsNullOrWhiteSpace(NextUpAddUrl))
+                return;
+
+            var videoId = VideoId.TryParse(NextUpAddUrl);
+            var playlistId = PlaylistId.TryParse(NextUpAddUrl);
+            if (videoId == null && playlistId == null)
+            {
+                NextUpAddUrl = "Invalid URL";
+                await Task.Delay(2500);
+                NextUpAddUrl = string.Empty;
                 return;
             }
 
-            UrlInput = "Invalid URL";
-            await Task.Delay(2500);
-            UrlInput = null;
+            if (videoId != null)
+            {
+                var video = await _youtubeClient.Videos.GetAsync(videoId.Value);
+                //Maybe check if Video or Live
+                var track = new TrackModel(_youtubeClient)
+                {
+                    Artist = video.Author.ChannelTitle,
+                    Title = video.Title,
+                    Path = "https://www.youtube.com/watch?v=" + video.Id,
+                    CoverUrl = video.Thumbnails.GetWithHighestResolution().Url,
+                    Length = video.Duration.GetValueOrDefault(),
+                };
+                if (NextUpDoInsert)
+                {
+                    NextUp.Insert(1, track);
+                }
+                else
+                {
+                    NextUp.Add(track);
+                }
+            }
+
+            else if (videoId == null && playlistId != null)
+            {
+                var plsVideos = await _youtubeClient.Playlists.GetVideosAsync(playlistId.Value);
+                foreach (var video in plsVideos)
+                {
+                    var track = new TrackModel(_youtubeClient)
+                    {
+                        Artist = video.Author.ChannelTitle,
+                        Title = video.Title,
+                        Path = "https://www.youtube.com/watch?v=" + video.Id,
+                        CoverUrl = video.Thumbnails.GetWithHighestResolution().Url,
+                        Length = video.Duration.GetValueOrDefault(),
+                    };
+                    if (NextUpDoInsert)
+                    {
+                        NextUp.Insert(1, track);
+                    }
+                    else
+                    {
+                        NextUp.Add(track);
+                    }
+                }
+            }
+
+            NextUpAddUrl = string.Empty;
         }
 
-        public void RemoveTrackFromQueue(TrackModel track)
-        {
-            Queue.Remove(track);
-            this.RaisePropertyChanged(nameof(QueueCount));
-            this.RaisePropertyChanged(nameof(QueueLength));
-        }
-
-        public async Task SavePlaylist(Window parent)
+        public async Task SavePlaylist()
         {
             var plsPathDialog = new SaveFileDialog()
             {
@@ -300,17 +460,18 @@ namespace LivePlayer.UI.ViewModels
                 InitialFileName = "Playlist.m3u",
                 Title = "Save Current Playlist"
             };
-            var dialogResult = await plsPathDialog.ShowAsync(parent);
+            var desktopLifetime = Application.Current!.ApplicationLifetime as IClassicDesktopStyleApplicationLifetime;
+            var dialogResult = await plsPathDialog.ShowAsync(desktopLifetime!.MainWindow);
             if (string.IsNullOrWhiteSpace(dialogResult))
             {
                 return;
             }
 
             var pls = PlaylistIOFactory.GetInstance().GetPlaylistIO(dialogResult);
-            pls.FilePaths = Queue.Select(t => t.Path!).ToList();
+            pls.FilePaths = Playlist.Select(t => t.Path!).ToList();
         }
 
-        public async Task LoadPlaylist(Window parent)
+        public async Task LoadPlaylist()
         {
             var plsPathDialog = new OpenFileDialog()
             {
@@ -324,78 +485,50 @@ namespace LivePlayer.UI.ViewModels
                 },
                 Title = "Load Playlist (Only with YouTube URL supported)"
             };
-            var dialogResult = await plsPathDialog.ShowAsync(parent);
+            var desktopLifetime = Application.Current!.ApplicationLifetime as IClassicDesktopStyleApplicationLifetime;
+            var dialogResult = await plsPathDialog.ShowAsync(desktopLifetime!.MainWindow);
             if (dialogResult == null || dialogResult.Length == 0)
             {
                 return;
             }
 
             var pls = PlaylistIOFactory.GetInstance().GetPlaylistIO(dialogResult[0]);
-            Queue.Clear();
+            Playlist.Clear();
             foreach (var path in pls.FilePaths)
             {
-                var track = new TrackModel(_youtubeClient, Queue)
+                var track = new TrackModel(_youtubeClient, Playlist)
                 {
                     Path = path,
                     IsPlaying = false
                 };
                 _ = Task.Run(track.LoadInfoAsync);
-                Queue.Add(track);
+                Playlist.Add(track);
             }
-
-            this.RaisePropertyChanged(nameof(QueueCount));
-            this.RaisePropertyChanged(nameof(QueueLength));
         }
 
         public void ClearQueue()
         {
-            Queue.Clear();
-            this.RaisePropertyChanged(nameof(QueueCount));
-            this.RaisePropertyChanged(nameof(QueueLength));
+            Playlist.Clear();
+            var firstNextUp = NextUp.FirstOrDefault();
+            NextUp.Clear();
+            if (firstNextUp != null)
+            {
+                NextUp.Add(firstNextUp);
+            }
         }
 
         #region MediaButtons
 
-        public async Task Play()
+        public void Play()
         {
-            if (QueueSelectedTrack != null)
-            {
-                //Play selected
-                if (CurrentTrack != null)
-                {
-                    CurrentTrack.IsPlaying = false;
-                }
-
-                CurrentTrack = QueueSelectedTrack;
-                //if (string.IsNullOrWhiteSpace(CurrentTrack.DirectPath))
-                //{
-                await CurrentTrack.GetDirectPath();
-                //}
-
-                await MediaPlayer.LoadAsync(CurrentTrack.DirectPath!);
-                //Volume = _lastVolume;
-                MediaPlayer.Volume = _lastVolume;
-                IsPlaying = MediaPlayer.Play();
-                CurrentTrack.IsPlaying = true;
-                if (IsFileOut)
-                {
-                    await File.WriteAllTextAsync("Title.txt", CurrentTrack.Title);
-                    await File.WriteAllTextAsync("Artist.txt", CurrentTrack.Artist);
-                }
-
-                QueueSelectedTrack = null;
-                return;
-            }
-            
-            //Volume = _lastVolume;
-            MediaPlayer.Volume = _lastVolume;
-            MediaPlayer.Play();
+            _mediaPlayer.Volume = _lastVolume;
+            _mediaPlayer.Play();
             IsPlaying = true;
         }
-        
+
         public void Pause()
         {
-            MediaPlayer.Pause();
+            _mediaPlayer.Pause();
             IsPlaying = false;
         }
 
@@ -406,7 +539,7 @@ namespace LivePlayer.UI.ViewModels
 
             CurrentTrack!.IsPlaying = false;
             CurrentPosition = TimeSpan.Zero;
-            MediaPlayer.Stop();
+            _mediaPlayer.Stop();
             IsPlaying = false;
 
             if (!IsFileOut)
@@ -423,29 +556,44 @@ namespace LivePlayer.UI.ViewModels
 
         public async Task Rewind()
         {
-            if (CurrentPosition.TotalSeconds > 5 || LastPlayed.Count == 0)
+            if (CurrentPosition.TotalSeconds > 5 || History.Count == 0)
             {
-                MediaPlayer.Position = TimeSpan.Zero;
+                _mediaPlayer.Position = TimeSpan.Zero;
             }
             else
             {
                 CurrentTrack!.IsPlaying = false;
-                var prevSong = LastPlayed[0];
-                LastPlayed.RemoveAt(0);
+                var prevSong = History[0];
+                History.RemoveAt(0);
+                NextUp.Insert(0, prevSong);
+                NextUp.RemoveAt(NextUp.Count - 1);
                 CurrentTrack = prevSong;
                 CurrentTrack.IsPlaying = true;
                 CurrentPosition = TimeSpan.Zero;
-                
-                await MediaPlayer.LoadAsync(CurrentTrack.DirectPath!);
-                MediaPlayer.Volume = _lastVolume;
-                //Volume = _lastVolume;
-                IsPlaying = MediaPlayer.Play();
+
+                await _mediaPlayer.LoadAsync(CurrentTrack.DirectPath!);
+                _mediaPlayer.Volume = _lastVolume;
+                IsPlaying = _mediaPlayer.Play();
                 if (IsFileOut)
                 {
                     await File.WriteAllTextAsync("Title.txt", CurrentTrack.Title);
                     await File.WriteAllTextAsync("Artist.txt", CurrentTrack.Artist);
                 }
             }
+        }
+
+        #endregion
+
+        #region Random stuff
+
+        public void OpenSourceRepo()
+        {
+            var ps = new ProcessStartInfo("https://github.com/Sekoree/LivePlayer")
+            {
+                UseShellExecute = true,
+                Verb = "open"
+            };
+            Process.Start(ps);
         }
 
         #endregion

@@ -1,0 +1,104 @@
+﻿<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:viewModels="clr-namespace:LivePlayer.UI.ViewModels"
+             xmlns:models="clr-namespace:LivePlayer.UI.Models"
+             xmlns:controls="clr-namespace:LivePlayer.UI.Controls"
+             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+             x:Class="LivePlayer.UI.Controls.Playlist">
+    
+    <UserControl.DataContext>
+        <viewModels:MainWindowViewModel />
+    </UserControl.DataContext>
+
+
+    <Grid HorizontalAlignment="Stretch"
+          VerticalAlignment="Stretch"
+          RowDefinitions="Auto, Auto, *"
+          ColumnDefinitions="*, Auto">
+
+        <StackPanel Grid.Column="0"
+                    Grid.ColumnSpan="2"
+                    Grid.Row="0"
+                    Margin="5"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center"
+                    Orientation="Horizontal"
+                    Spacing="-1">
+            <Button Width="100"
+                    HorizontalAlignment="Stretch"
+                    HorizontalContentAlignment="Center"
+                    CornerRadius="20,0,0,20"
+                    Content="Load" 
+                    Command="{Binding LoadPlaylist}"/>
+            <Button Width="100"
+                    HorizontalAlignment="Center"
+                    HorizontalContentAlignment="Center"
+                    CornerRadius="0"
+                    Content="Save" 
+                    Command="{Binding SavePlaylist}"/>
+            <Button Width="100"
+                    HorizontalAlignment="Stretch"
+                    HorizontalContentAlignment="Center"
+                    CornerRadius="0,20,20,0"
+                    Background="#662222"
+                    Content="Clear"
+                    Command="{Binding ClearQueue}"/>
+        </StackPanel>
+
+        <TextBox Grid.Column="0"
+                 Grid.Row="1"
+                 CornerRadius="3,0,0,0"
+                 BorderThickness="1,1,0,1"
+                 Watermark="Add YouTube Video/Playlist URL" 
+                 Text="{Binding PlaylistAddUrl}"
+                 KeyDown="InputElement_OnKeyDown"/>
+
+        <Button Grid.Column="1"
+                Grid.Row="1"
+                CornerRadius="0,3,0,0"
+                VerticalAlignment="Stretch"
+                HorizontalAlignment="Stretch"
+                BorderBrush="White"
+                BorderThickness="0,1,1,1"
+                Content="Add" 
+                Command="{Binding AddTracksToPlaylist}"/>
+
+        <ListBox Grid.Column="0"
+                 Grid.ColumnSpan="2"
+                 Grid.Row="2"
+                 Margin="0,0,0,5"
+                 CornerRadius="0,0,3,3"
+                 SelectionMode="Toggle"
+                 Items="{Binding Playlist}"
+                 SelectedItem="{Binding PlaylistSelectedTrack}">
+
+            <ListBox.ItemTemplate>
+                <DataTemplate DataType="models:TrackModel">
+                    <controls:QueueEntry HorizontalAlignment="Stretch"
+                                         Track="{Binding .}"
+                                         IsPlaying="{Binding IsPlaying, Mode=TwoWay}"
+                                         CornerRadius="3"
+                                         Padding="5"
+                                         BorderBrush="White"
+                                         DoubleTapped="PlaylistElement_OnDoubleTapped" />
+                </DataTemplate>
+            </ListBox.ItemTemplate>
+
+            <ListBox.Styles>
+                <Styles>
+                    <Style Selector="controls|QueueEntry:isPlaying">
+                        <Setter Property="BorderThickness" Value="2" />
+                    </Style>
+                    <Style Selector="ListBoxItem">
+                        <Setter Property="Padding" Value="0" />
+                    </Style>
+                </Styles>
+            </ListBox.Styles>
+
+        </ListBox>
+
+    </Grid>
+
+</UserControl>

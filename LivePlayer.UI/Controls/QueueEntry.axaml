@@ -35,6 +35,8 @@
                    Text="{Binding Track.Length, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type UserControl}}}"/>
         
         <Button Grid.Column="4"
+                IsEnabled="{Binding Track.CanDelete,RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type UserControl}}}"
+                IsVisible="{Binding Track.CanDelete,RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type UserControl}}}"
                 Margin="5 ,0,15,0"
                 HorizontalAlignment="Center"
                 HorizontalContentAlignment="Center"
@@ -44,11 +46,17 @@
                 Padding="2"
                 CornerRadius="10"
                 Background="#662222"
-                Command="{Binding Track.RemoveThis, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type UserControl}}}">
+                Command="{Binding Track.Delete, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type UserControl}}}">
             <Svg VerticalAlignment="Center"
                  HorizontalAlignment="Center"
                  Path="avares://LivePlayer/Assets/highlight_off_white_48dp.svg"/>
         </Button>
+        
+        <Grid.ContextMenu>
+            <ContextMenu>
+                <MenuItem Header="Copy URL" Click="MenuItem_OnClick" />
+            </ContextMenu>
+        </Grid.ContextMenu>
         
     </Grid>
     
